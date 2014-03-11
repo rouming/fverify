@@ -1,0 +1,55 @@
+fverify: yet another tool for files verification
+
+Purpose:
+  creates list of verification actions, which can be file open,
+  file stat, file read/mmap and file close.  Then the verification
+  list can be replayed on some target platform.  This tool was planned
+  to be used for file system development, when there is a high need
+  to emulate some application behaviour, which opens random files,
+  performs read/mmap requests and verifies received data.
+
+Modes:
+generate
+  Mode in which tool analyses the directory, stats all files, does
+  partitioning of every file and writes actions to fverify.list output
+  file.
+
+verify
+  Mode in which tool reads input list (fverify.list) and executes every action
+  in list.
+
+What you can achieve with this tool:
+  1.  Verify every file on corruption in some directory (stat info and checksum)
+  2.  Randomly do partition of every file, thus generate random IO
+      requests
+  3.  Shuffle all the files in list, thus generate random lookups
+  4.  Randomly choose block size of every request from specified range.
+  5.  Generate plain reads or mmap requets in ratio: e.g.
+      25% of mmaps, 75% of reads
+  6.  Open files with O_DIRECT flag in ratio: e.g.
+      50% cached opens, 50% opens with O_DIRECT
+  7.  Generate sequential or random IO, or generate IO in raio: e.g.
+      30% sequential requets, 70% random requests
+  8.  Include fverify.list file to every autotest sequence to generate
+      equal requests to some mounted partition
+  9.  Open many files at once (up to 256) and generate read/mmaps
+      requests to those files simultaneously
+  10. Specify seed for random generator to have reproducible
+      verification list
+
+So, this tool can help to find some read problems of file system.
+
+Usage:
+  # Generate
+  $ fverify generate      \
+       --dir ./rootfs     \ # generate for rootfs dir
+       --block 6-12       \ # use block size between 6 and 12 sectors
+       --io random=50     \ # generate random IO in 50% of cases
+       --order shuffle    \ # shuffle all the files
+       --verify mmap=50   \ # use mmap requests in 50% of cases
+       --verify odirect=0 \ # do not use O_DIRECT flag at all
+       --opened 128       \ # handle 128 files opened simultaneously
+       --seed 0             # 0 seed
+
+  # Verify
+  $ fverify verify --dir ./rootfs
